@@ -1,15 +1,19 @@
-# Read-only Bankr prompt (after files are committed to GitHub)
+# Bankr read-only test prompt (no blockchain transactions)
 
-Hey @bankrbot, please use the official Net Protocol skill:
-https://netprotocol.app/skill.md
+Replace `YOUR_PUBLIC_REPOSITORY_URL` with **your own public fork URL**.
 
-My Mintbay Studio repository is:
-https://github.com/FILTER8/mintbay-net-collection-template
+---
 
-Please read `NET_BASE_GUIDE.md`, `collection/config.json`, and `collection/artwork.json`.
+Hey @bankrbot, I made a generative pixel-art collection using Mintbay Studio and want to turn it into a fully on-chain NFT collection.
 
-For the Hoodie #351 example, use the **existing** `contracts/hoodwallet/NetIntegratedERC721A.sol` exactly as committed. It is a narrowly adapted version of Net's documented ERC721A base, with fixed HoodWallet administration and an inheritable seeded mint helper. Do not regenerate or replace the Net base. Preserve its registration and mint/transfer/burn messaging logic byte for byte.
+My GitHub repository: **YOUR_PUBLIC_REPOSITORY_URL**
 
-Generate only the collection-specific Solidity (packed art data, renderer/metadata, royalties, Hoodie free mint, burn-to-claim) and tests, using the config and art as the sources of truth. Pin solc 0.8.24, ERC721A 4.3.0 and Solady. Include complete source files, compile output, decoded sample tokenURI JSON and SVG, and all test results. Flag any inconsistency or dependency mismatch rather than guessing.
+Use the official Net Protocol skill: https://netprotocol.app/skill.md
 
-**STRICTLY OFF-CHAIN: DO NOT DEPLOY, SIGN, BROADCAST, MINT, BURN, SUBMIT TRANSACTIONS OR SPEND FUNDS.** Wait for separate explicit authorization.
+Please read `NET_BASE_GUIDE.md`, `ADDONS.md`, `collection/config.json` and `collection/artwork.json`. Use the **already committed** Net base indicated by `deployment.baseContract` in the config; do not regenerate, modify or replace it, and preserve its Net registration and mint/transfer/burn messages.
+
+Generate the collection-specific Solidity, packed on-chain artwork, SVG renderer, weighted trait generation and metadata, implementing only the selected features and values from the files. Preserve pixels, colors, weights, layer order and transparency. Repeated combinations are allowed. Respect or explicitly flag incompatible trait rules.
+
+Compile and test the complete Solidity source, check the runtime bytecode limit, verify a sample decoded tokenURI/SVG, and report mint permissions and gas considerations. Provide the **actual complete** source files, artifacts and test output. Report any missing required settings instead of guessing.
+
+**STRICTLY READ-ONLY / OFF-CHAIN. DO NOT DEPLOY, SIGN, BROADCAST, MINT, BURN, SUBMIT TRANSACTIONS OR SPEND FUNDS. Wait for separate explicit authorization.**

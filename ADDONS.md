@@ -1,40 +1,38 @@
-# Optional contract add-ons (artist-selected)
+# Optional collection features
 
-Bankr: **start with the official Net NFT collection reference**:
-https://raw.githubusercontent.com/stuckinaboot/net-public/main/skill-references/nft-collections.md
+These add-ons are generated in the **collection-specific** contract only when enabled in `collection/config.json`. The Net base contract selected by `deployment.baseContract` must remain untouched. Reference: https://netprotocol.app/skill.md.
 
-**Do not replace Net Protocol's messaging integration.** Preserve the Net registration, `sendMessageViaApp` calls from the ERC721A transfer hook, message topics, sender conventions, and best-effort `try/catch` logic. The contract-specific additions below should be added **only when their corresponding `features` flag is true** in `collection/config.json`.
+## `standardRoyalties`
 
-## `standardRoyalties`: ERC-2981
+Implement ERC-2981, advertise `0x2a5520c9` in `supportsInterface`, use `collection.royaltyBps` and the explicitly configured `collection.royaltyReceiver`. Bankr should report missing receiver addresses rather than invent one. No forced royalties / transfer filtering are requested.
 
-- Expose ERC-2981 royalty info and advertise it through ERC-165 `supportsInterface`.
-- Use `royaltyBps` (the sample uses **600 = 6%**) and `royaltyReceiver` from `collection/config.json`.
-- No ERC-721C, operator filtering, or transfer-restricting royalty enforcement. ERC-2981 cannot force payment on every marketplace.
+## `oneFreeMintPerHoodie`
 
-## `oneFreeMintPerHoodie`: optional OnChainHoodies example
+**Optional OnChainHoodies example** — not enabled for unrelated collections by default.
 
-- Sample Robinhood Chain Hoodie NFT contract: `0x9Ec6C5b9f572A9B02138E553BC5F5882Da735F45` (see config).
-- Function shape: `freeMint(uint256 hoodieId)`.
-- Verify `IERC721(hoodieContract).ownerOf(hoodieId) == msg.sender` at claim time.
-- Each Hoodie token ID can be claimed **once for the life of the collection**, even if the Hoodie later transfers. Mint the new NFT to the caller.
-- Supply cap includes **paid, creator, and free mints**. Free mints must use the normal Net ERC721A seed and mint paths so Net emits a standard `mint` message.
-- No signatures, Merkle proofs, token-bound-wallet activation, or additional token requirement. This direct owner check does not support nested ownership or claiming directly from a TBA without additional work.
-- The sample supply is 2,048 but 6,000 Hoodies exist; a free claim is **not guaranteed to every Hoodie** if the common supply sells out. No free-claim reserve is specified.
-- For other projects, set `oneFreeMintPerHoodie` to `false` unless you explicitly intend to use this collection's token gate.
+- Check `IERC721(eligibility.hoodieContract).ownerOf(hoodieId) == msg.sender` when `freeMint(uint256 hoodieId)` is called.
+- Allow exactly one lifetime free mint per Hoodie **token ID**, including after transfers; record claims on-chain.
+- Mint the new NFT to the caller, using the existing inherited seeded mint helper (available in the HoodWallet variant) or the official base's existing internal seed/supply/mint helpers (standard base). **Never rewrite the base to implement this.**
+- Paid, free, and creator mints share `collection.maxSupply`; no supply is reserved for free claims unless explicitly redesigned.
+- Direct owner check does not automatically support nested HoodWallet ownership; supporting that is outside this example's scope.
 
-## `burnForClaim`: future redemption address
+## `burnForClaim`
 
-- Add an owner-settable target, e.g. `setClaimContract(address)`.
-- An NFT owner or approved operator can `burnForClaim(uint256 tokenId)` only after a nonzero claim target has been set; it should call ERC721A's normal authorized burn path so Net emits a standard `burn` message.
-- Emit a separate local event holding the burner, burned NFT token ID, and claim target.
-- This **records** a burn for a future claim; it does **not** automatically award the replacement NFT. Any future redemption contract needs secure eligibility checking and replay protection.
+- Expose `setClaimContract(address)` to the collection's immutable administrator. A null initial address is allowed: burns stay disabled until a nonzero target is set.
+- `burnForClaim(tokenId)` must check NFT ownership/authorization. Record the **owner at burn time as the claim beneficiary**, never simply `msg.sender`, since an approved operator might submit the burn.
+- Record the beneficiary, triggering caller, configured target claim contract, token ID, timestamp and an `exists` flag permanently; expose readable `getBurnRecord(tokenId)` and an event.
+- Use the normal ERC721A `_burn(tokenId, true)` flow, preserving Net's original burn message.
+- Subsequent changes to `claimContract` must **not** rewrite historical burn targets.
+- The future claim contract must verify eligibility (`targetClaimContract == address(this)`, historical owner as beneficiary) and enforce **per-token one-time redemption**. A record is not itself a redemption mechanism.
+- For added safety, project authors may choose owner-only burns instead of approved-operator burns. Make this explicit before launch.
 
-## `transferableOwnership`: two-step ownership transfer
+## Administration modes
 
-- Add simple two-step owner transfer for collection administrative controls.
-- **Caveat from the official Net reference:** its immutable `_deployer` authorizes `mintToCreator()` and receives withdrawals, and the reference methods are not virtual. Simply inheriting `Ownable2Step` does **not** transfer those permissions.
-- If complete control transfer is required, Bankr may minimally adapt the deployer-only premint/withdrawal authority in the base **without changing the Net integration code or message behavior**. Report the exact changes for approval, or explicitly disclose that the original deployer retains those privileges if upstream code stays byte-for-byte intact. Never falsely promise full ownership transfer.
+- `deployment.adminMode = standard`: use `contracts/net/NetIntegratedERC721A.sol`. Its immutable `_deployer` is `msg.sender` during deployment; changing `collection.deployerAddress` cannot change that behavior.
+- `deployment.adminMode = hoodwallet`: use `contracts/hoodwallet/NetIntegratedERC721A.sol` and set `collection.deployerAddress` to the correct **canonical HoodWallet**. Only the TBA can call `onlyDeployer` admin functions. The deployed contract can be created by an EOA or sponsor while retaining permanent HoodWallet administration.
+- Do **not** add `Ownable2Step` or transferable contract ownership: `features.transferableOwnership` remains false.
+- Net's registration and mint/transfer/burn activity semantics must remain aligned with the official reference for both modes.
 
-## Common validation
+## Mandatory checks before deployment
 
-Before deployment, confirm all non-null collection parameters, compile against the documented ERC721A/solady versions, check contract code size, test paid/free/creator mint limits and Net hooks, test admin transitions and burn auth, decode a representative on-chain tokenURI/SVG, request explicit transaction approval, and verify the deployed contract source.
+Confirm all required addresses and prices, deployer privilege behavior, actual tokenURI JSON/SVG, artwork weight/pixel fidelity, eligible free-mint behavior, burn beneficiary and claim history, bytecode size and gas costs. Compile and test the **actual sources** with the documented dependencies; a summary of artwork data is not a substitute for the full file.

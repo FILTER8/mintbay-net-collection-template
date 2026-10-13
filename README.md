@@ -1,62 +1,56 @@
-# Mintbay Studio × Net Protocol × Bankr
+# Mintbay Studio → Bankr → Net Protocol
 
-**Draw your generative pixel-art collection in [Mintbay Studio](https://studio.mintbay.xyz), export its JSON, and ask [Bankr](https://bankr.bot) to deploy it as a fully on-chain NFT collection using the official [Net Protocol skill](https://www.netprotocol.app/skill.md).**
+Create generative pixel art in **[Mintbay Pixel Studio](https://studio.mintbay.xyz)**, export **`artwork.json` and `config.json`**, then use **Bankr + [Net Protocol's official skill](https://netprotocol.app/skill.md)** to generate, compile, and — only with separate explicit approval — deploy a fully on-chain NFT collection.
 
-This is a **forkable starter repository** for artists and creators. No Solidity experience is required to prepare your art and a prompt. Bankr is expected to generate and compile the Solidity and submit deployment transactions. **Never approve an unreviewed transaction.**
+This repository is a reusable **community template**, not an official Net or Bankr service. It does not deploy anything by itself.
 
-> This repo is a community workflow/template, **not** an official Net Protocol or Bankr deployment service. Whether Bankr can fetch a GitHub URL and complete the requested workflow must be checked with Bankr. Nothing is deployed merely by forking this repository.
+## Quick start for creators
 
-## Quick start
+1. Open [Mintbay Studio](https://studio.mintbay.xyz/2d) and design your art. Set its **name** and **supply**.
+2. Open the **Onchain** tab and enter the public mint price, per-wallet limit, creator allowance, royalties, and optional features.
+3. Click **Export artwork.json** and **Export config.json**.
+4. Fork this repository (or use **Use this template**), and replace **`collection/artwork.json`** and **`collection/config.json`** with your exported files.
+5. Read **`NET_BASE_GUIDE.md`** and **`ADDONS.md`**. The configuration field **`deployment.baseContract`** selects one of the already committed bases.
+6. Copy the **read-only generation test** from **`BANKR_BASE_PROMPT.md`** to Bankr. Ask for complete source, compilation artifacts, and tests before considering deployment.
+7. Once the contract has been reviewed, use the separate **`BANKR_PROMPT.md`** for a publicly shareable deployment request. It authorizes only the stated deployment and source verification — not extra mints or other transactions.
 
-1. **Create your art:** Open **[studio.mintbay.xyz](https://studio.mintbay.xyz)**. Build your collection using pixel layers, traits, and rarity weights. Export its JSON.
-2. **Fork this repository** using GitHub's **Fork** button. (The repo owner can also enable **Template repository** in Settings to offer **Use this template**.)
-3. **Replace `collection/artwork.json`** with your exported JSON. Do not just rename the old art; replace its contents.
-4. **Edit `collection/config.json`** with your collection name, supply, price, wallet cap, creator reserve, and royalty/owner addresses. The sample has placeholders (`null`) that must be filled before deployment.
-5. **Choose optional features** in `collection/config.json`. Read `ADDONS.md` if you enable them. The supplied example is configured to request Hoodie-gated free minting, burn-to-claim, transferable ownership, and 6% ERC-2981 royalties.
-6. **Copy the prompt** from `BANKR_PROMPT.md` to Bankr, replacing `YOUR_PUBLIC_REPOSITORY_URL` with your fork's URL. Bankr should read your public files and the official Net NFT reference, generate and compile your on-chain collection, and ask for approval before deployment.
-7. **Review and verify:** Review all settings and bytecode/contract-size concerns, approve only if correct, and ensure source-code verification and real mint/transfer Net messages are checked after deployment.
+### What's in this repository?
 
-### What is in this repository?
-
-| File | Purpose |
+| Path | Purpose |
 | --- | --- |
-| [`collection/artwork.json`](collection/artwork.json) | Example unmodified 8×8 portrait export from Mintbay Studio: 8 layers, 53 weighted traits, 2,048 supply. **Replace with your art.** |
-| [`collection/config.json`](collection/config.json) | Collection settings and optional feature toggles. **Edit before deployment.** |
-| [`BANKR_PROMPT.md`](BANKR_PROMPT.md) | Short Bankr prompt based on the existing Net-skill workflow. |
-| [`ADDONS.md`](ADDONS.md) | Optional extension requirements; the Net integration itself must stay intact. |
+| [`collection/artwork.json`](collection/artwork.json) | Fully specified artwork: pixel data, layer order, trait names and weights. Replace with your exported art. |
+| [`collection/config.json`](collection/config.json) | Collection name, supply, public mint price, wallet cap, creator reserve, royalties, administration, selected add-ons. Replace with your exported config. |
+| [`contracts/net/NetIntegratedERC721A.sol`](contracts/net/NetIntegratedERC721A.sol) | Pinned reference-compatible Net base for normal creator deployments. |
+| [`contracts/hoodwallet/NetIntegratedERC721A.sol`](contracts/hoodwallet/NetIntegratedERC721A.sol) | Minimal administrator-address variant for HoodWallet-controlled collections. |
+| [`NET_BASE_GUIDE.md`](NET_BASE_GUIDE.md) | How to select the base without rewriting Net's registration and activity messaging. |
+| [`ADDONS.md`](ADDONS.md) | Explicit optional features, including Hoodie free mint and burn-to-claim. |
+| [`BANKR_BASE_PROMPT.md`](BANKR_BASE_PROMPT.md) | Read-only compilation/test prompt. |
+| [`BANKR_PROMPT.md`](BANKR_PROMPT.md) | Public deployment prompt, for use only after review. |
+| [`scripts/check_net_alignment.py`](scripts/check_net_alignment.py) | Static consistency check (not a substitute for Solidity compilation/tests). |
 
-## How the NFT art works
+## Important: fixed base contracts
 
-Mintbay's export supplies the **art ingredients**: canvas dimensions, an ordered list of layers, a list of pixel maps and names for each trait, and relative weights.
+**Bankr should not regenerate, replace or rewrite either Net base.** The standard base uses the actual transaction deployer as its immutable administrator. The HoodWallet variant instead accepts the configured administrator address, enabling Hoodie token-bound-wallet administration without deploying from the TBA itself. The Net registration and mint/transfer/burn message logic remain consistent with the Net skill.
 
-For each newly minted NFT, use the **official Net base's per-token seed** to choose **one weighted trait per layer**. Render these layers in the original order (transparent pixels let underlying layers show through). Both the artwork and metadata must derive from the **same** selected traits. **Random combinations may repeat**: this is a generative collection, not a promise that every possible combination or minted piece will be unique.
+For new generic collections, select `contracts/net/NetIntegratedERC721A.sol`. For an intentionally HoodWallet-administered collection, select `contracts/hoodwallet/NetIntegratedERC721A.sol` and provide the correct account address in `collection.deployerAddress`. Do **not** use Hoodie #351's address for unrelated collections.
 
-The final NFT must have **fully on-chain SVG artwork and JSON metadata**. The deployed contract should not fetch the JSON from GitHub; the JSON is input to the contract-generation process only. Bytecode/data may need compact packing to respect EVM contract-size and gas limits.
+## Example: 8x8Portait
 
-## Keep the original Net integration
+The included example uses 8×8 pixel artwork, 8 layers, 53 traits and 2,048 maximum supply. It demonstrates 0.001 ETH public mints, a 20-mint public wallet limit, 20 creator mints, 6% ERC-2981 royalties, and permanent administration by **Hoodie #351's HoodWallet**. These settings are for this example only. Other artists should export their own `config.json` from Studio.
 
-**Do not replace or reinvent the official Net messaging logic.** Bankr should use the documented `NetIntegratedERC721A` base and preserve collection registration and the original `mint`, `transfer`, `burn` message behavior, including `sendMessageViaApp` and best-effort `try/catch` handling.
+The Hoodie-gated one-free-mint feature is **optional**. The free claim and public/creator mints share one supply; with 2,048 total tokens, claims cannot be promised to all 6,000 Hoodies. A creator allowance is a lifetime mint limit, **not** a guaranteed reserved allocation unless additional reservation logic is separately designed.
 
-- [Official Net skill](https://www.netprotocol.app/skill.md)
-- [Official Net-integrated NFT reference](https://raw.githubusercontent.com/stuckinaboot/net-public/main/skill-references/nft-collections.md)
+## Rendering and contract expectations
 
-You can add artist-requested functionality **around** the base, as described in `ADDONS.md`. If adding transferable ownership requires changing Net's fixed deployer admin code, **the Net posting implementation and semantics must remain untouched**. Bankr must disclose any necessary admin change.
+- The source `artwork.json` is read at code generation time. All selected art and metadata must be stored/rendered on-chain and remain functional without GitHub or a web server.
+- Select traits according to their **relative weights** and preserve layer order/transparency and exact colors. Repeated combinations are acceptable.
+- If the source contains `incompatibleWith` rules, Bankr must honor them or explicitly report the mismatch rather than silently discarding rules.
+- Validate bytecode limits, mint economics, NFT metadata JSON/SVG, and owner/burn authorization by compiling and testing the **actual full source files**.
+- ERC-2981 does not enforce royalty payments. Burn-for-claim records do not implement a future claim contract's replay protection.
+- Because Net's reference randomness uses `block.prevrandao`, avoid high-value rarity lottery promises.
 
-## Example project included
+## Safety
 
-This forkable repo currently contains the **8x8Portait** sample exported from Mintbay Studio. It is **not** the older 64 Faces specification; use the source JSON's actual colors and rarity weights, not any unrelated palette or traits.
+The **test prompt** prohibits all on-chain actions. The separate **deployment prompt** should only be sent when you're ready for mainnet spending, after reviewing the generated code and transaction details. The collection's public mint is generally live as soon as the contract is deployed unless you specifically implement a mint pause. A GitHub commit or Studio export does not deploy anything.
 
-The example uses **2,048 max supply** and optionally gates one free claim to each token ID in the OnChainHoodies collection on Robinhood Chain. Because more than 2,048 Hoodies exist, **a free mint for every Hoodie cannot be guaranteed** with this shared cap. No reserved supply is defined in the example.
-
-## Notes before deploying
-
-- **Forking does not deploy.** All blockchain writes and payments should happen through Bankr only after review.
-- **Royalties:** ERC-2981 royalty information does not force marketplace payments.
-- **Randomness:** Net's reference seed uses `block.prevrandao`; suitable for lightweight generative art, **not** high-stakes rare-trait lotteries.
-- **Contract size:** 8×8 layered pixel maps should be packed/compressed into deployable bytecode or data contracts. Bankr must check code size and rendering/gas feasibility before deployment.
-- **Ownership:** The upstream Net base pins the deployer for creator premints and withdrawals. Two-step ownership on an inheriting contract alone does **not** transfer these permissions. See `ADDONS.md`.
-- **Licensing:** Each artist is responsible for the rights to the art they upload. This template does not grant rights to third-party artwork.
-
----
-
-**Create in [Mintbay Studio](https://studio.mintbay.xyz) · Deploy with Bankr · Integrate with Net Protocol.**
+**[Create artwork in Mintbay Studio](https://studio.mintbay.xyz) · [Official Net skill](https://netprotocol.app/skill.md)**
