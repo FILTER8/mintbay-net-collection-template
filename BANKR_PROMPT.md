@@ -1,25 +1,25 @@
-# Public Bankr deployment prompt (use only after source review)
+# One-shot Bankr deployment prompt
 
-Replace `YOUR_PUBLIC_REPOSITORY_URL` with **your own public fork**. Sending this prompt explicitly requests a mainnet deployment if the checks pass. To test without deployment, use **`BANKR_BASE_PROMPT.md`** instead.
+**Ready for mainnet deployment?** Replace `YOUR_PUBLIC_REPOSITORY_URL` with the URL of your own public repository containing the exported `collection/artwork.json` and `collection/config.json`. Post the prompt below on X. The prompt **authorizes deployment and gas spending**, not minting. It intentionally starts with `@bankrbot`.
 
 ---
 
-Hey @bankrbot, let's try something!
+@bankrbot create and deploy a fully on-chain generative NFT collection on Robinhood Chain using my Mintbay Studio artwork and configuration.
 
-I created a generative pixel-art collection in **https://studio.mintbay.xyz**, and I'd like to turn it into a fully on-chain NFT collection.
+Everything you need is here:
+YOUR_PUBLIC_REPOSITORY_URL
 
-My GitHub repository is: **YOUR_PUBLIC_REPOSITORY_URL**
+Use this skill for creating NFT collections:
+https://netprotocol.app/skill.md
 
-Use the official Net Protocol skill: **https://netprotocol.app/skill.md**
+Follow `collection/config.json` and `collection/artwork.json` exactly. Use the existing Net Protocol base specified by the repository configuration without changing its Net integration.
 
-Read `collection/artwork.json`, `collection/config.json`, `NET_BASE_GUIDE.md`, and `ADDONS.md`. Use the **existing** Net base specified in `deployment.baseContract` without modifying its registration or mint/transfer/burn messaging. Generate only the collection-specific art renderer, metadata and enabled features using the actual GitHub files — don't invent settings or artwork.
+Generate, compile, deploy, and verify the collection on Robinhood Etherscan (https://robin.etherscan.io).
 
-First verify that the Solidity compiles, that SVG/metadata are fully on-chain, that all selected mint limits and administration settings match `config.json`, and that runtime bytecode fits EVM limits. If anything is missing, incompatible or unverifiable, stop and explain before submitting a transaction.
+Return the collection address, deployment transaction hash, and Etherscan verification links. Do not mint NFTs or execute unrelated transactions.
 
-If these checks pass, **deploy one collection** on the network configured in `collection.chainId` and verify the full source code on the chain explorer. Return the collection address, deployment transaction hash, explorer link and verification status. Confirm Net collection registration if it can be verified.
+---
 
-**Do not mint NFTs, transfer tokens, withdraw ETH, configure optional contracts or execute additional transactions. Do not switch networks or administrator addresses to work around a problem.**
+**Note:** The creator/admin address, price, supply, royalties and optional features come from the JSON configuration, not the social post. If compilation or deployment fails, report the error; do not deploy a different implementation or change networks/admins to work around it. Some Net registration messages may create auxiliary on-chain data contracts; these are not necessarily separately verifiable Solidity implementations.
 
-Please show the anticipated deployment gas cost and ask for my confirmation before submitting the deployment transaction whenever supported.
-
-Let's see if pixel art can become a fully on-chain collection!
+For an optional no-transaction test, see [`BANKR_BASE_PROMPT.md`](BANKR_BASE_PROMPT.md). For creator minting *after* deployment, see [`BANKR_CREATOR_MINT_PROMPT.md`](BANKR_CREATOR_MINT_PROMPT.md).

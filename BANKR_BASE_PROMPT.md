@@ -4,7 +4,7 @@ Replace `YOUR_PUBLIC_REPOSITORY_URL` with **your own public fork URL**.
 
 ---
 
-Hey @bankrbot, I made a generative pixel-art collection using Mintbay Studio and want to turn it into a fully on-chain NFT collection.
+@bankrbot I made a generative pixel-art collection using Mintbay Studio and want to turn it into a fully on-chain NFT collection.
 
 My GitHub repository: **YOUR_PUBLIC_REPOSITORY_URL**
 
